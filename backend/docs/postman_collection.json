@@ -1,0 +1,115 @@
+{
+  "info": {
+    "_postman_id": "icb-census-api-collection",
+    "name": "ICB Student Census API",
+    "description": "Postman Collection for ICB Student Census System",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Public API",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/health"
+          }
+        },
+        {
+          "name": "Submit Census Form",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"personalDetails\": {\n    \"studentName\": \"Muhammad Hamza Khan\",\n    \"cnicFormAvailable\": \"Yes\",\n    \"cnicOrFormBNumber\": \"61101-1234567-1\",\n    \"gender\": \"Male\",\n    \"dateOfBirth\": \"2010-04-15\"\n  },\n  \"educationalDetails\": {\n    \"admissionNumber\": \"ICB-2024-8841\",\n    \"class\": \"9\",\n    \"section\": \"A\",\n    \"shift\": \"Morning\"\n  }\n}"
+            },
+            "url": "{{baseUrl}}/api/census/submit"
+          }
+        },
+        {
+          "name": "Check Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/census/check-status/ICB-2024-8841?reference=ICB-2026-A19F42",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "census", "check-status", "ICB-2024-8841"],
+              "query": [{ "key": "reference", "value": "ICB-2026-A19F42" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin API",
+      "item": [
+        {
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@icb.edu.pk\",\n  \"password\": \"AdminPass123!\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/login"
+          }
+        },
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/admin/dashboard/stats"
+          }
+        },
+        {
+          "name": "Query Students",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/students?page=1&limit=25",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admin", "students"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "25" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Print Single Student PDF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/api/admin/students/{{studentId}}/print"
+          }
+        },
+        {
+          "name": "Bulk Export (Excel)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"xlsx\"\n}"
+            },
+            "url": "{{baseUrl}}/api/admin/students/bulk-export"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "studentId", "value": "" }
+  ]
+}

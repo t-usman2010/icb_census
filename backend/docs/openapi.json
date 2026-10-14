@@ -1,0 +1,265 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "ICB Student Census System API",
+    "description": "Production REST API and Administration Engine for Islamabad College for Boys Student Census digitization.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local Development Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "System Health & DB Connectivity Check",
+        "responses": {
+          "200": {
+            "description": "Service status"
+          }
+        }
+      }
+    },
+    "/api/census/submit": {
+      "post": {
+        "summary": "Submit Student Census Form (Public)",
+        "description": "Accepts the comprehensive census questionnaire, performs validation, checks for duplicates, and assigns a unique reference code.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["personalDetails", "educationalDetails"],
+                "properties": {
+                  "personalDetails": {
+                    "type": "object",
+                    "required": ["studentName"],
+                    "properties": {
+                      "studentName": { "type": "string", "example": "Muhammad Hamza" },
+                      "cnicFormAvailable": { "type": "string", "enum": ["Yes", "No"] },
+                      "cnicOrFormBNumber": { "type": "string", "example": "61101-1234567-1" },
+                      "gender": { "type": "string", "enum": ["Male", "Female", "Transgender"] }
+                    }
+                  },
+                  "educationalDetails": {
+                    "type": "object",
+                    "required": ["admissionNumber"],
+                    "properties": {
+                      "admissionNumber": { "type": "string", "example": "ICB-2024-8841" },
+                      "class": { "type": "string", "example": "9" },
+                      "section": { "type": "string", "example": "A" },
+                      "shift": { "type": "string", "enum": ["Morning", "Evening"] }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successfully registered",
+            "content": {
+              "application/json": {
+                "example": {
+                  "success": true,
+                  "reference": "ICB-2026-A19F42",
+                  "id": "673f32c94...",
+                  "duplicateWarning": false
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/census/check-status/{admissionNumber}": {
+      "get": {
+        "summary": "Check Submission Status",
+        "parameters": [
+          {
+            "name": "admissionNumber",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "reference",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe status response"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+    "/api/census/upload-attachment": {
+      "post": {
+        "summary": "Upload Disability Certificate or Documentation",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "File uploaded"
+          }
+        }
+      }
+    },
+    "/api/admin/login": {
+      "post": {
+        "summary": "Admin Login",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": { "type": "string", "example": "admin@icb.edu.pk" },
+                  "password": { "type": "string", "example": "AdminPass123!" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JWT tokens issued"
+          }
+        }
+      }
+    },
+    "/api/admin/students": {
+      "get": {
+        "summary": "Query Paginated Student Records",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 25 } },
+          { "name": "class", "in": "query", "schema": { "type": "string" } },
+          { "name": "gender", "in": "query", "schema": { "type": "string" } },
+          { "name": "submissionStatus", "in": "query", "schema": { "type": "string" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of student records and facet aggregations"
+          }
+        }
+      }
+    },
+    "/api/admin/students/{id}/print": {
+      "get": {
+        "summary": "Generate Single Student Official Census Sheet PDF",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Streamed A4 PDF replicating official bio-data form",
+            "content": { "application/pdf": {} }
+          }
+        }
+      }
+    },
+    "/api/admin/students/bulk-print": {
+      "post": {
+        "summary": "Generate Combined Bulk Census PDF",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": { "type": "array", "items": { "type": "string" } },
+                  "filter": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Streamed combined PDF",
+            "content": { "application/pdf": {} }
+          }
+        }
+      }
+    },
+    "/api/admin/students/bulk-export": {
+      "post": {
+        "summary": "Export Records to Excel or CSV",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": { "type": "array", "items": { "type": "string" } },
+                  "filter": { "type": "object" },
+                  "format": { "type": "string", "enum": ["xlsx", "csv"], "default": "xlsx" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Streamed XLSX or CSV file"
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard/stats": {
+      "get": {
+        "summary": "Retrieve Aggregated Dashboard Metrics",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Aggregated analytics" }
+        }
+      }
+    },
+    "/api/admin/audit-log": {
+      "get": {
+        "summary": "View Security Audit Trail (SuperAdmin only)",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Audit trail log records" }
+        }
+      }
+    }
+  }
+}
